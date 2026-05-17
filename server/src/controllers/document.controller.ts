@@ -1,23 +1,21 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { extractTextFromPdf } from '../utils/pdfExtractor';
 import { parseDocument } from '../services/gemini.service';
 import { saveParsedDocument } from '../services/document.service';
-import fs from 'fs';
+import httpStatus from 'http-status';
+import ApiError from '../utils/ApiError';
 
 /**
  * Controller to handle document processing with MongoDB persistence
  * Flow: upload PDFs -> extract text -> Gemini parse -> normalize -> MongoDB save -> return saved docs
  */
-export const processDocuments = async (req: Request, res: Response) => {
+export const processDocuments = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
 
     // Step 1: Validate all files exist
     if (!files || !files.poFile?.[0] || !files.grnFile?.[0] || !files.invoiceFile?.[0]) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing required files. Please provide poFile, grnFile, and invoiceFile.',
-      });
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Missing required files. Please provide poFile, grnFile, and invoiceFile.');
     }
 
     const results: any = {
@@ -66,11 +64,7 @@ export const processDocuments = async (req: Request, res: Response) => {
       success: true,
       data: results,
     });
-  } catch (error: any) {
-    console.error('Document processing error:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message || 'Internal server error during document processing',
-    });
+  } catch (error) {
+    next(error);
   }
 };

@@ -5,6 +5,7 @@ import swaggerUi from 'swagger-ui-express';
 import swaggerJsdoc from 'swagger-jsdoc';
 import routes from './routes/v1';
 import swaggerOptions from './config/swagger';
+import { errorConverter, errorHandler } from './middlewares/error.middleware';
 
 const app: Express = express();
 
@@ -30,5 +31,11 @@ app.use('/api/v1', routes);
 app.get('/', (req, res) => {
   res.send({ message: 'Server is running', swagger: '/api-docs' });
 });
+
+// convert error to ApiError, if needed
+app.use(errorConverter);
+
+// handle error
+app.use(errorHandler);
 
 export default app;

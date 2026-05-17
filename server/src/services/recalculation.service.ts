@@ -21,7 +21,7 @@ export const recalculateMatchState = async (poNumber: string) => {
   const updatedMatchResult = await MatchResultModel.findOneAndUpdate(
     { poNumber },
     matchState,
-    { upsert: true, new: true },
+    { upsert: true, returnDocument: 'after' },
   );
 
   return updatedMatchResult;

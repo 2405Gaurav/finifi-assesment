@@ -18,7 +18,7 @@ export const parseDocument = async (
 
   const prompts = {
     po: `Extract the following details from this Purchase Order text into a strict JSON format:
-        - poNumber (string)
+        - poNumber (string, look for "PO Number", "P.O. No", "Purchase Order #")
         - poDate (string)
         - vendorName (string)
         - items (array of { itemCode: string, description: string, quantity: number })
@@ -26,14 +26,14 @@ export const parseDocument = async (
         Text: ${rawText}`,
     grn: `Extract the following details from this Goods Receipt Note (GRN) text into a strict JSON format:
         - grnNumber (string)
-        - poNumber (string)
+        - poNumber (string, look for "PO Number", "P.O. No", "Purchase Order #")
         - grnDate (string)
         - items (array of { itemCode: string, description: string, receivedQuantity: number })
         
         Text: ${rawText}`,
     invoice: `Extract the following details from this Invoice text into a strict JSON format:
         - invoiceNumber (string)
-        - poNumber (string)
+        - poNumber (string, look for "PO Number", "P.O. No", "Purchase Order #", "Reference")
         - invoiceDate (string)
         - items (array of { itemCode: string, description: string, quantity: number })
         
