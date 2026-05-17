@@ -8,12 +8,7 @@ export const getMatchByPoNumber = async (req: Request, res: Response) => {
   try {
     const { poNumber } = req.params;
 
-    if (!poNumber) {
-      return res.status(400).json({
-        success: false,
-        error: 'poNumber parameter is required',
-      });
-    }
+    // Manual validation removed as it's now handled by Zod middleware
 
     const matchResult = await MatchResultModel.findOne({ poNumber });
 

@@ -1,5 +1,7 @@
 import express from 'express';
 import { getMatchByPoNumber } from '../../controllers/match.controller';
+import { validate } from '../../middlewares/validate.middleware';
+import { matchValidators } from '../../validators/document.validator';
 
 const router = express.Router();
 
@@ -36,7 +38,7 @@ const router = express.Router();
  *                 success: { type: 'boolean', example: true }
  *                 data: { $ref: '#/components/schemas/MatchResult' }
  *       400:
- *         description: Missing PO number
+ *         description: Validation failed or missing PO number
  *         content:
  *           application/json:
  *             schema: { $ref: '#/components/schemas/Error' }
@@ -51,6 +53,6 @@ const router = express.Router();
  *           application/json:
  *             schema: { $ref: '#/components/schemas/Error' }
  */
-router.get('/:poNumber', getMatchByPoNumber);
+router.get('/:poNumber', validate(matchValidators.getMatch), getMatchByPoNumber);
 
 export default router;
