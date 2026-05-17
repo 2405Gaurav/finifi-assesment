@@ -13,4 +13,7 @@ export const config = {
   gemini: {
     apiKey: process.env.GEMINI_API_KEY || '',
   },
+  cors: {
+    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  },
 };

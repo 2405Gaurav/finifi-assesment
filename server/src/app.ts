@@ -8,6 +8,7 @@ import swaggerOptions from './config/swagger';
 import { errorConverter, errorHandler } from './middlewares/error.middleware';
 import httpStatus from 'http-status';
 import ApiError from './utils/ApiError';
+import { config } from './config/config';
 
 const app: Express = express();
 
@@ -21,7 +22,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // enable cors
-app.use(cors());
+app.use(
+  cors({
+    origin: config.cors.origin,
+    credentials: true,
+  }),
+);
 
 // Swagger UI
 const specs = swaggerJsdoc(swaggerOptions);
