@@ -45,10 +45,13 @@ const getErrorMessage = (error: unknown, fallback: string): AppError => {
       : JSON.stringify(response.details, null, 2);
   }
 
+  // If the error message is "Route not found", it's likely a 404 from a missing endpoint
+  const message = response?.message || axiosError.message || fallback;
+
   return {
-    message: response?.message || fallback,
+    message,
     details,
-    code: response?.code,
+    code: response?.code || axiosError.response?.status,
   };
 };
 

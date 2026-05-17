@@ -22,12 +22,12 @@ export const matchService = {
   },
 
   getSessions: async (page = 1, limit = 5): Promise<SessionListResponse> => {
-    const response = await api.get<SessionListResponse>(`/documents/sessions?page=${page}&limit=${limit}`);
+    const response = await api.get<SessionListResponse>(`/sessions?page=${page}&limit=${limit}`);
     return response.data;
   },
 
   getSession: async (sessionId: string): Promise<SessionResponse> => {
-    const response = await api.get<SessionResponse>(`/documents/sessions/${sessionId}`);
+    const response = await api.get<SessionResponse>(`/sessions/${sessionId}`);
     return response.data;
   },
 };
