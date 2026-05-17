@@ -45,10 +45,12 @@ export const runMatchingEngine = (
     }
   }
 
-  // Aggregate Items by itemCode
+  // Aggregate Items by itemCode (or SKU)
   const processItems = (doc: IDocument, type: 'po' | 'grn' | 'invoice') => {
     doc.items.forEach((item) => {
-      let result = itemResultsMap.get(item.itemCode);
+      // Use itemCode as primary key, fallback to description if missing (though schema requires it)
+      const key = item.itemCode || item.description;
+      let result = itemResultsMap.get(key);
       if (!result) {
         result = {
           itemCode: item.itemCode,
@@ -59,7 +61,7 @@ export const runMatchingEngine = (
           status: MatchStatus.INSUFFICIENT_DOCUMENTS,
           reasons: [],
         };
-        itemResultsMap.set(item.itemCode, result);
+        itemResultsMap.set(key, result);
       }
 
       if (type === 'po') result.poQuantity += item.quantity;

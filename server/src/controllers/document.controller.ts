@@ -5,6 +5,7 @@ import { saveParsedDocument } from '../services/document.service';
 import httpStatus from 'http-status';
 import ApiError from '../utils/ApiError';
 import fs from 'fs';
+import DocumentModel from '../models/document.model';
 
 /**
  * Controller to handle document processing with MongoDB persistence
@@ -72,6 +73,76 @@ export const processDocuments = async (req: Request, res: Response, next: NextFu
           fs.unlinkSync(file.path);
         }
       });
+    }
+    next(error);
+  }
+};
+
+/**
+ * Get a parsed document by ID
+ */
+export const getDocumentById = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const document = await DocumentModel.findById(id);
+
+    if (!document) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Document not found');
+    }
+
+    res.json({
+      success: true,
+      data: document,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Upload a single document by type
+ */
+export const uploadSingleDocument = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { documentType } = req.body;
+    const file = req.file;
+
+    if (!file) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'No file uploaded');
+    }
+
+    if (!['po', 'grn', 'invoice'].includes(documentType)) {
+      if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid documentType. Must be po, grn, or invoice');
+    }
+
+    // 1. Extract text from PDF
+    const rawText = await extractTextFromPdf(file.path);
+
+    // 2. Parse using Gemini service
+    const parsedData = await parseDocument(documentType as any, rawText);
+
+    // 3. Normalize and Save to MongoDB
+    const savedDocument = await saveParsedDocument({
+      documentType: documentType as any,
+      rawExtractedText: rawText,
+      parsedData,
+      file,
+    });
+
+    // 4. Cleanup local temporary file
+    if (fs.existsSync(file.path)) {
+      fs.unlinkSync(file.path);
+    }
+
+    res.status(httpStatus.CREATED).json({
+      success: true,
+      data: savedDocument,
+    });
+  } catch (error) {
+    // Cleanup if file exists
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
     }
     next(error);
   }

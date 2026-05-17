@@ -1,6 +1,6 @@
 import express from 'express';
-import { processDocuments } from '../../controllers/document.controller';
-import { documentUpload } from '../../middlewares/upload.middleware';
+import { processDocuments, getDocumentById, uploadSingleDocument } from '../../controllers/document.controller';
+import { documentUpload, upload } from '../../middlewares/upload.middleware';
 
 const router = express.Router();
 
@@ -15,8 +15,8 @@ const router = express.Router();
  * @swagger
  * /documents/process:
  *   post:
- *     summary: Process PO, GRN, and Invoice PDFs
- *     description: Uploads three PDF files, extracts text using pdf-parse, parses data with Gemini 1.5 Flash, normalizes the data, and persists it to MongoDB.
+ *     summary: Process PO, GRN, and Invoice PDFs concurrently
+ *     description: Uploads three PDF files, extracts text, parses with Gemini 2.5 Flash, normalizes, and persists to MongoDB.
  *     tags: [Documents]
  *     requestBody:
  *       required: true
@@ -28,41 +28,71 @@ const router = express.Router();
  *               poFile:
  *                 type: string
  *                 format: binary
- *                 description: Purchase Order PDF file
  *               grnFile:
  *                 type: string
  *                 format: binary
- *                 description: Goods Receipt Note PDF file
  *               invoiceFile:
  *                 type: string
  *                 format: binary
- *                 description: Invoice PDF file
  *     responses:
  *       200:
- *         description: Successfully processed and saved documents
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success: { type: 'boolean', example: true }
- *                 data:
- *                   type: object
- *                   properties:
- *                     po: { $ref: '#/components/schemas/Document' }
- *                     grn: { $ref: '#/components/schemas/Document' }
- *                     invoice: { $ref: '#/components/schemas/Document' }
+ *         description: Success
  *       400:
- *         description: Missing required files or invalid input
- *         content:
- *           application/json:
- *             schema: { $ref: '#/components/schemas/Error' }
- *       500:
- *         description: Internal server error during processing
- *         content:
- *           application/json:
- *             schema: { $ref: '#/components/schemas/Error' }
+ *         description: Bad Request
  */
 router.post('/process', documentUpload, processDocuments);
+
+/**
+ * @swagger
+ * /documents/upload:
+ *   post:
+ *     summary: Upload a single document by type
+ *     description: Uploads a single PDF file (po, grn, or invoice), parses it, and triggers match recalculation.
+ *     tags: [Documents]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - file
+ *               - documentType
+ *             properties:
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *               documentType:
+ *                 type: string
+ *                 enum: [po, grn, invoice]
+ *     responses:
+ *       201:
+ *         description: Document uploaded and processed successfully
+ *       400:
+ *         description: Invalid input
+ */
+router.post('/upload', upload.single('file'), uploadSingleDocument);
+
+/**
+ * @swagger
+ * /documents/{id}:
+ *   get:
+ *     summary: Get a parsed document by ID
+ *     description: Returns the stored parsed document data for a specific document ID.
+ *     tags: [Documents]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The document ID
+ *     responses:
+ *       200:
+ *         description: Document data
+ *       404:
+ *         description: Document not found
+ */
+router.get('/:id', getDocumentById);
 
 export default router;

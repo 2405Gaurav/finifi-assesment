@@ -18,7 +18,7 @@ export const parseDocument = async (
 
   const prompts = {
     po: `Extract the following details from this Purchase Order text into a strict JSON format:
-        - poNumber (string, MANDATORY. Look for "PO Number", "P.O. No", "Order #", "Purchase Order #", or similar identifiers. It usually follows a pattern like CI4PO05788)
+        - poNumber (string, MANDATORY. Look for "PO Number", "P.O. No", "Order #", "Purchase Order #", or similar identifiers)
         - poDate (string)
         - vendorName (string)
         - items (array of { itemCode: string, description: string, quantity: number })
