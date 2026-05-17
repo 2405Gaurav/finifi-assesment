@@ -1,23 +1,32 @@
 /**
- * Simple in-memory store for milestone 1
+ * Simple in-memory storage service for milestone 1
  */
 class MemoryStore {
-  private store: Map<string, any> = new Map();
+  private documents: any[] = [];
 
-  set(key: string, value: any) {
-    this.store.set(key, value);
+  /**
+   * Adds a parsed document to the store
+   * @param document The parsed document data
+   */
+  addDocument(document: any) {
+    this.documents.push({
+      ...document,
+      storedAt: new Date(),
+    });
   }
 
-  get(key: string) {
-    return this.store.get(key);
+  /**
+   * Returns all stored documents
+   */
+  getAllDocuments() {
+    return this.documents;
   }
 
-  getAll() {
-    return Object.fromEntries(this.store);
-  }
-
-  clear() {
-    this.store.clear();
+  /**
+   * Clears all stored documents
+   */
+  clearDocuments() {
+    this.documents = [];
   }
 }
 
