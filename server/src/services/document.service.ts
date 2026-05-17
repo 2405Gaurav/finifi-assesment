@@ -1,4 +1,5 @@
 import DocumentModel, { DocumentType, ProcessingStatus, IDocument } from '../models/document.model';
+import { recalculateMatchState } from './recalculation.service';
 
 /**
  * Interface for the input to saveParsedDocument
@@ -80,6 +81,9 @@ export const saveParsedDocument = async (input: SaveParsedDocumentInput): Promis
     filePath: file.path,
     processingStatus: ProcessingStatus.PROCESSED,
   });
+
+  // 4. Trigger recalculation
+  await recalculateMatchState(poNumber);
 
   return document;
 };
