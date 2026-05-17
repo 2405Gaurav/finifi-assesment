@@ -1,28 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import httpStatus from 'http-status';
 import { config } from '../config/config';
-
-export class ApiError extends Error {
-  statusCode: number;
-  isOperational: boolean;
-
-  constructor(statusCode: number, message: string, isOperational = true, stack = '') {
-    super(message);
-    this.statusCode = statusCode;
-    this.isOperational = isOperational;
-    if (stack) {
-      this.stack = stack;
-    } else {
-      Error.captureStackTrace(this, this.constructor);
-    }
-  }
-}
+import ApiError from '../utils/ApiError';
 
 export const errorConverter = (err: any, req: Request, res: Response, next: NextFunction) => {
   let error = err;
   if (!(error instanceof ApiError)) {
     const statusCode = error.statusCode || httpStatus.INTERNAL_SERVER_ERROR;
-    const message = error.message || httpStatus[statusCode];
+    const message = error.message || (httpStatus as any)[statusCode] || httpStatus[httpStatus.INTERNAL_SERVER_ERROR];
     error = new ApiError(statusCode, message, false, err.stack);
   }
   next(error);

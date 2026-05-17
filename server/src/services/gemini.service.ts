@@ -18,7 +18,7 @@ export const parseDocument = async (
 
   const prompts = {
     po: `Extract the following details from this Purchase Order text into a strict JSON format:
-        - poNumber (string, look for "PO Number", "P.O. No", "Purchase Order #")
+        - poNumber (string, MANDATORY. Look for "PO Number", "P.O. No", "Order #", "Purchase Order #", or similar identifiers. It usually follows a pattern like CI4PO05788)
         - poDate (string)
         - vendorName (string)
         - items (array of { itemCode: string, description: string, quantity: number })
@@ -26,14 +26,14 @@ export const parseDocument = async (
         Text: ${rawText}`,
     grn: `Extract the following details from this Goods Receipt Note (GRN) text into a strict JSON format:
         - grnNumber (string)
-        - poNumber (string, look for "PO Number", "P.O. No", "Purchase Order #")
+        - poNumber (string, MANDATORY. Look for "PO Number", "P.O. No", "Order #", "Purchase Order #", or similar. It identifies the original PO this GRN belongs to)
         - grnDate (string)
         - items (array of { itemCode: string, description: string, receivedQuantity: number })
         
         Text: ${rawText}`,
     invoice: `Extract the following details from this Invoice text into a strict JSON format:
         - invoiceNumber (string)
-        - poNumber (string, look for "PO Number", "P.O. No", "Purchase Order #", "Reference")
+        - poNumber (string, MANDATORY. Look for "PO Number", "P.O. No", "Reference", "Order #", "Purchase Order #", or "Ref:". It refers to the original PO being invoiced)
         - invoiceDate (string)
         - items (array of { itemCode: string, description: string, quantity: number })
         
@@ -41,17 +41,29 @@ export const parseDocument = async (
   };
 
   const basePrompt = `
-    You are a professional document parser.
-    Return ONLY valid JSON.
-    Do NOT include markdown formatting like \`\`\`json.
-    Do NOT include any explanations or extra text.
-    If a field is not found, use null or an empty array for items.
+    You are a high-precision procurement document parser.
+    Your goal is to extract structured data with 100% accuracy.
     
+    CRITICAL INSTRUCTIONS:
+    1. Return ONLY valid JSON.
+    2. Do NOT include markdown formatting like \`\`\`json.
+    3. Do NOT include any explanations, preambles, or extra text.
+    4. If a field is not found, use null or an empty array for items.
+    5. Pay special attention to finding the PO Number in ALL documents as it is used for three-way matching.
+    
+    DOCUMENT-SPECIFIC REQUIREMENTS:
     ${prompts[documentType]}
   `;
 
   try {
-    const result = await model.generateContent(basePrompt);
+    const aiPromise = model.generateContent(basePrompt);
+    
+    // Add a 60-second timeout for the AI call
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error(`Gemini API call timed out for ${documentType}`)), 60000)
+    );
+
+    const result = (await Promise.race([aiPromise, timeoutPromise])) as any;
     const response = await result.response;
     const text = response.text().trim();
 

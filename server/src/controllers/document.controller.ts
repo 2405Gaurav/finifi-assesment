@@ -4,6 +4,7 @@ import { parseDocument } from '../services/gemini.service';
 import { saveParsedDocument } from '../services/document.service';
 import httpStatus from 'http-status';
 import ApiError from '../utils/ApiError';
+import fs from 'fs';
 
 /**
  * Controller to handle document processing with MongoDB persistence
@@ -42,12 +43,10 @@ export const processDocuments = async (req: Request, res: Response, next: NextFu
         file,
       });
 
-      // Cleanup local temporary file is handled in the controller or service?
-      // User requirement didn't specify cleanup but it's good practice.
-      // However, the service needs the filePath for the DB record.
-      // In a real prod app, we'd upload to S3 and keep that URL.
-      // For now, we'll keep them or delete after save if preferred.
-      // The prompt says "Save PO... return saved MongoDB documents".
+      // Cleanup local temporary file after successful save
+      if (fs.existsSync(file.path)) {
+        fs.unlinkSync(file.path);
+      }
       
       return savedDocument;
     };
@@ -65,6 +64,15 @@ export const processDocuments = async (req: Request, res: Response, next: NextFu
       data: results,
     });
   } catch (error) {
+    // Cleanup any files that were uploaded but not processed due to error
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+    if (files) {
+      Object.values(files).flat().forEach((file) => {
+        if (fs.existsSync(file.path)) {
+          fs.unlinkSync(file.path);
+        }
+      });
+    }
     next(error);
   }
 };

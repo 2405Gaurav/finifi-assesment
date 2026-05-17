@@ -70,6 +70,7 @@ export const saveParsedDocument = async (input: SaveParsedDocumentInput): Promis
 
   // 2. Validation
   if (!poNumber) {
+    console.error(`[Parsing Error] ${documentType} is missing poNumber. Parsed Data:`, JSON.stringify(parsedData, null, 2));
     throw new Error(`Invalid ${documentType}: poNumber is missing in parsed data.`);
   }
   if (!items || items.length === 0) {

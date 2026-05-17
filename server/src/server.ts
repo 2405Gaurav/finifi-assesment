@@ -5,7 +5,7 @@ import connectDB from './config/database';
 const startServer = async () => {
   await connectDB();
   
-  app.listen(config.port, () => {
+  const server = app.listen(config.port, () => {
     const baseUrl = `http://localhost:${config.port}`;
     const swaggerUrl = `${baseUrl}/api-docs`;
 
@@ -15,6 +15,9 @@ const startServer = async () => {
     console.log(`📘 Swagger Docs: ${swaggerUrl}`);
     console.log('================================================\n');
   });
+
+  // Increase server timeout to 2 minutes for processing large PDFs/AI calls
+  server.timeout = 120000;
 };
 
 startServer();
