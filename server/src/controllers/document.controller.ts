@@ -3,7 +3,7 @@ import { extractTextFromPdf } from '../utils/pdfExtractor';
 import { parseDocument } from '../services/gemini.service';
 import { saveParsedDocument } from '../services/document.service';
 import httpStatus from 'http-status';
-import ApiError from '../utils/ApiError';
+import ApiError  from '@/utils/ApiError';
 import fs from 'fs';
 import DocumentModel from '../models/document.model';
 
