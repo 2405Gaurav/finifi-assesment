@@ -20,7 +20,7 @@ export const errorConverter = (err: any, req: Request, res: Response, next: Next
   if (!(error instanceof ApiError)) {
     const statusCode = error.statusCode || httpStatus.INTERNAL_SERVER_ERROR;
     const message = error.message || (httpStatus as any)[statusCode] || httpStatus[httpStatus.INTERNAL_SERVER_ERROR];
-    error = new ApiError(statusCode, message, false, err.stack);
+    error = new ApiError(statusCode, message, false, err.stack, error.details);
   }
   next(error);
 };
@@ -38,6 +38,7 @@ export const errorHandler = (err: ApiError, req: Request, res: Response, _next: 
     success: false,
     code: statusCode,
     message,
+    ...(err.details !== undefined && { details: err.details }),
     ...(config.env === 'development' && { stack: err.stack }),
   };
 

@@ -1,7 +1,25 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import httpStatus from 'http-status';
 import { config } from '../config/config';
+import ApiError from '../utils/ApiError';
 
 const genAI = new GoogleGenerativeAI(config.gemini.apiKey);
+
+const stringifyGeminiError = (error: unknown): string => {
+  if (error instanceof Error) {
+    return error.stack || error.message;
+  }
+
+  if (typeof error === 'string') {
+    return error;
+  }
+
+  try {
+    return JSON.stringify(error, null, 2);
+  } catch {
+    return 'Unknown Gemini error';
+  }
+};
 
 /**
  * Generic document parser using Gemini 2.5 Flash
@@ -15,7 +33,13 @@ export const parseDocument = async (
   retries = 3,
 ): Promise<any> => {
   if (!config.gemini.apiKey) {
-    throw new Error('Gemini API key is not configured.');
+    throw new ApiError(
+      httpStatus.SERVICE_UNAVAILABLE,
+      'AI is resting in a funny way right now. Gemini key is missing or not configured. It seems the brain is unplugged!',
+      true,
+      '',
+      'Gemini API key is not configured in the environment variables.',
+    );
   }
 
   const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
@@ -84,7 +108,17 @@ export const parseDocument = async (
       throw new Error(`Failed to parse Gemini response as JSON: ${jsonString}`);
     }
   } catch (error: any) {
+    const detailedError = stringifyGeminiError(error);
     console.error(`Error calling Gemini API for ${documentType}:`, error);
-    throw new Error(`Gemini API error: ${error.message}`);
+
+    const friendlyMessage = detailedError.includes('429')
+      ? 'AI is resting in a funny way right now. Gemini is feeling overwhelmed (Rate Limited) and needs a quick nap. Please try again in a few seconds.'
+      : 'AI is resting in a funny way right now. Gemini is responding with an error. It might be having a mid-life crisis!';
+
+    const statusCode = detailedError.includes('429')
+      ? httpStatus.TOO_MANY_REQUESTS
+      : httpStatus.BAD_GATEWAY;
+
+    throw new ApiError(statusCode, friendlyMessage, true, '', detailedError);
   }
 };

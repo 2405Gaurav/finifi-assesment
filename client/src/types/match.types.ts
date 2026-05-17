@@ -59,9 +59,53 @@ export interface ProcessDocumentsResponse {
     grn: DocumentData;
     invoice: DocumentData;
   };
+  sessionId?: string;
 }
 
 export interface MatchResultResponse {
   success: boolean;
   data: MatchResult;
+}
+
+export interface AppError {
+  message: string;
+  details?: string;
+  code?: number;
+}
+
+export interface UploadSessionMatchResult {
+  status: MatchStatus;
+  mismatchReasons: MismatchReason[];
+  itemResults: ItemResult[];
+  lastMatchedAt: string;
+}
+
+export interface UploadSession {
+  _id: string;
+  poNumber: string;
+  title: string;
+  documents: {
+    po: Omit<DocumentData, '_id' | 'processingStatus' | 'createdAt' | 'updatedAt'> | null;
+    grn: Omit<DocumentData, '_id' | 'processingStatus' | 'createdAt' | 'updatedAt'> | null;
+    invoice: Omit<DocumentData, '_id' | 'processingStatus' | 'createdAt' | 'updatedAt'> | null;
+  };
+  matchResult: UploadSessionMatchResult;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SessionListResponse {
+  success: boolean;
+  data: UploadSession[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface SessionResponse {
+  success: boolean;
+  data: UploadSession;
 }

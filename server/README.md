@@ -49,6 +49,10 @@ The project follows a **Clean Architecture** pattern:
 ### **Matching**
 -   `GET /api/v1/match/:poNumber`: Get the latest matching state, mismatch reasons, item-level results, and the currently linked documents for a PO.
 
+### **Saved Sessions**
+-   `GET /api/v1/documents/sessions?page=1&limit=5`: Paginated history of saved upload sessions.
+-   `GET /api/v1/documents/sessions/:id`: Reopen a previously saved session snapshot.
+
 ### **Documentation**
 -   `GET /api-docs`: Interactive Swagger UI documentation.
 
@@ -78,6 +82,7 @@ The project follows a **Clean Architecture** pattern:
 -   Use the **Swagger UI** at `http://localhost:5000/api-docs` to test endpoints directly.
 -   Run `npm run build` to verify the TypeScript server compiles cleanly.
 -   Run `npm run lint` to verify the backend passes ESLint 9 with the repo-local flat config.
+-   See the root project guide at `../README.md` for full-stack setup and feature overview.
 
 ## 📮 API Usage Examples
 
@@ -124,3 +129,5 @@ curl http://localhost:5000/api/v1/match/PO-12345
 -   **AI Parsing**: We use Gemini 2.5 Flash for high-speed, cost-effective extraction. Rare extraction failures are handled via validation errors and descriptive logs.
 -   **Out-of-order uploads**: Documents are stored independently first, then matching is recalculated from the full document set for the affected `poNumber`.
 -   **Edge-case handling**: The API rejects empty/non-extractable PDFs, missing `poNumber`, missing document numbers, and invalid item arrays before persisting parsed output.
+-   **Rate limiting**: The API applies lightweight in-memory request throttling to both general API traffic and upload-heavy endpoints.
+-   **Session snapshots**: Successful multi-document processing saves extracted values and match output so the frontend can reopen previous sessions without re-uploading PDFs.

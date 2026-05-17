@@ -9,6 +9,7 @@ interface DocumentCardProps {
 
 const DocumentCard: React.FC<DocumentCardProps> = ({ document, title }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const formattedDate = document.documentDate ? new Date(document.documentDate).toLocaleDateString() : 'N/A';
 
   return (
     <div className="rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden">
@@ -32,7 +33,7 @@ const DocumentCard: React.FC<DocumentCardProps> = ({ document, title }) => {
             <p className="text-[10px] font-bold uppercase text-slate-400">Date</p>
             <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-900">
               <Calendar size={12} className="text-slate-400" />
-              {new Date(document.documentDate).toLocaleDateString()}
+              {formattedDate}
             </div>
           </div>
         </div>

@@ -1,6 +1,10 @@
 import express from 'express';
 import { processDocuments, getDocumentById, uploadSingleDocument } from '../../controllers/document.controller';
 import { documentUpload, upload } from '../../middlewares/upload.middleware';
+import { uploadRateLimiter } from '../../middlewares/rateLimit.middleware';
+import { getUploadSession, getUploadSessions } from '../../controllers/uploadSession.controller';
+import { validate } from '../../middlewares/validate.middleware';
+import { uploadSessionValidators } from '../../validators/document.validator';
 
 const router = express.Router();
 
@@ -40,7 +44,7 @@ const router = express.Router();
  *       400:
  *         description: Bad Request
  */
-router.post('/process', documentUpload, processDocuments);
+router.post('/process', uploadRateLimiter, documentUpload, processDocuments);
 
 /**
  * @swagger
@@ -71,7 +75,10 @@ router.post('/process', documentUpload, processDocuments);
  *       400:
  *         description: Invalid input
  */
-router.post('/upload', upload.single('file'), uploadSingleDocument);
+router.post('/upload', uploadRateLimiter, upload.single('file'), uploadSingleDocument);
+
+router.get('/sessions', validate(uploadSessionValidators.listSessions), getUploadSessions);
+router.get('/sessions/:id', validate(uploadSessionValidators.getSession), getUploadSession);
 
 /**
  * @swagger

@@ -7,12 +7,33 @@ import ItemResultsTable from '../components/ItemResultsTable';
 import MismatchReasons from '../components/MismatchReasons';
 import LoadingOverlay from '../components/LoadingOverlay';
 import EmptyState from '../components/EmptyState';
+import ErrorAlert from '../components/ErrorAlert';
+import SessionHistory from '../components/SessionHistory';
 import { RefreshCcw } from 'lucide-react';
+import { useEffect } from 'react';
 
 const Dashboard: React.FC = () => {
-  const { loading, parsedDocuments, matchResult, clearState, error } = useMatchStore();
+  const {
+    loading,
+    parsedDocuments,
+    matchResult,
+    clearState,
+    error,
+    clearError,
+    sessions,
+    sessionsPage,
+    sessionsTotalPages,
+    sessionsTotal,
+    activeSessionId,
+    fetchSessions,
+    openSession,
+  } = useMatchStore();
 
   const hasData = matchResult !== null;
+
+  useEffect(() => {
+    void fetchSessions(1);
+  }, [fetchSessions]);
 
   return (
     <div className="min-h-screen bg-slate-50/50 pb-20">
@@ -42,9 +63,7 @@ const Dashboard: React.FC = () => {
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-8 space-y-8">
         {/* Error Alert */}
         {error && (
-          <div className="rounded-xl border border-red-100 bg-red-50 p-4 text-sm font-medium text-red-600 shadow-sm animate-in slide-in-from-top-2 duration-300">
-            {error}
-          </div>
+          <ErrorAlert error={error} onClose={clearError} />
         )}
 
         {/* Upload Section */}
@@ -54,6 +73,16 @@ const Dashboard: React.FC = () => {
           </div>
           <UploadSection />
         </section>
+
+        <SessionHistory
+          sessions={sessions}
+          currentPage={sessionsPage}
+          totalPages={sessionsTotalPages}
+          totalSessions={sessionsTotal}
+          activeSessionId={activeSessionId}
+          onOpenSession={(sessionId) => void openSession(sessionId)}
+          onPageChange={(page) => void fetchSessions(page)}
+        />
 
         {!hasData ? (
           <EmptyState />

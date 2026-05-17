@@ -1,5 +1,10 @@
 import api from '../api/axios';
-import type { ProcessDocumentsResponse, MatchResultResponse } from '../types/match.types';
+import type {
+  MatchResultResponse,
+  ProcessDocumentsResponse,
+  SessionListResponse,
+  SessionResponse,
+} from '../types/match.types';
 
 export const matchService = {
   processDocuments: async (formData: FormData): Promise<ProcessDocumentsResponse> => {
@@ -13,6 +18,16 @@ export const matchService = {
 
   getMatchResult: async (poNumber: string): Promise<MatchResultResponse> => {
     const response = await api.get<MatchResultResponse>(`/match/${poNumber}`);
+    return response.data;
+  },
+
+  getSessions: async (page = 1, limit = 5): Promise<SessionListResponse> => {
+    const response = await api.get<SessionListResponse>(`/documents/sessions?page=${page}&limit=${limit}`);
+    return response.data;
+  },
+
+  getSession: async (sessionId: string): Promise<SessionResponse> => {
+    const response = await api.get<SessionResponse>(`/documents/sessions/${sessionId}`);
     return response.data;
   },
 };

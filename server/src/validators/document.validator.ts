@@ -5,6 +5,7 @@ import { z } from 'zod';
  */
 export const commonSchemas = {
   poNumber: z.string().trim().min(1, 'PO Number is required'),
+  mongoId: z.string().trim().regex(/^[a-f\d]{24}$/i, 'Invalid identifier'),
   pagination: z.object({
     page: z.string().optional().transform((val) => (val ? parseInt(val, 10) : 1)),
     limit: z.string().optional().transform((val) => (val ? parseInt(val, 10) : 10)),
@@ -29,5 +30,16 @@ export const matchValidators = {
 export const documentValidators = {
   processDocuments: z.object({
     body: z.object({}), // Currently only multipart files are expected
+  }),
+};
+
+export const uploadSessionValidators = {
+  listSessions: z.object({
+    query: commonSchemas.pagination,
+  }),
+  getSession: z.object({
+    params: z.object({
+      id: commonSchemas.mongoId,
+    }),
   }),
 };

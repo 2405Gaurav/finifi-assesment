@@ -3,10 +3,12 @@ import { extractTextFromPdf } from '../utils/pdfExtractor';
 import { parseDocument } from '../services/gemini.service';
 import { saveParsedDocument } from '../services/document.service';
 import { recalculateMatchState } from '../services/recalculation.service';
+import { createUploadSessionSnapshot } from '../services/uploadSession.service';
 import httpStatus from 'http-status';
 import ApiError from '../utils/ApiError';
 import fs from 'fs';
 import DocumentModel from '../models/document.model';
+import MatchResultModel from '../models/matchResult.model';
 import mongoose from 'mongoose';
 
 /**
@@ -83,10 +85,26 @@ export const processDocuments = async (req: Request, res: Response, next: NextFu
       throw rejectedResult.reason;
     }
 
+    const sessionPoNumber = String(results.po?.poNumber || results.grn?.poNumber || results.invoice?.poNumber || '').trim();
+    let uploadSession = null;
+
+    if (sessionPoNumber) {
+      const latestMatchResult = await MatchResultModel.findOne({ poNumber: sessionPoNumber });
+      if (latestMatchResult) {
+        uploadSession = await createUploadSessionSnapshot({
+          po: results.po,
+          grn: results.grn,
+          invoice: results.invoice,
+          matchResult: latestMatchResult,
+        });
+      }
+    }
+
     // Return structured response with MongoDB documents
     res.json({
       success: true,
       data: results,
+      ...(uploadSession && { sessionId: uploadSession._id }),
     });
   } catch (error) {
     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
