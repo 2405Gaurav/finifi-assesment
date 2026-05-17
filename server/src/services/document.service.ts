@@ -12,6 +12,15 @@ interface SaveParsedDocumentInput {
 }
 
 /**
+ * Safely parse a date string, returning undefined if invalid
+ */
+const parseSafeDate = (dateStr: any): Date | undefined => {
+  if (!dateStr) return undefined;
+  const date = new Date(dateStr);
+  return isNaN(date.getTime()) ? undefined : date;
+};
+
+/**
  * Service to handle document persistence and normalization
  */
 export const saveParsedDocument = async (input: SaveParsedDocumentInput): Promise<IDocument> => {
@@ -27,7 +36,7 @@ export const saveParsedDocument = async (input: SaveParsedDocumentInput): Promis
     case 'po':
       poNumber = parsedData.poNumber;
       documentNumber = parsedData.poNumber;
-      documentDate = parsedData.poDate ? new Date(parsedData.poDate) : undefined;
+      documentDate = parseSafeDate(parsedData.poDate);
       items = (parsedData.items || []).map((item: any) => ({
         itemCode: item.itemCode,
         description: item.description,
@@ -38,7 +47,7 @@ export const saveParsedDocument = async (input: SaveParsedDocumentInput): Promis
     case 'grn':
       poNumber = parsedData.poNumber;
       documentNumber = parsedData.grnNumber;
-      documentDate = parsedData.grnDate ? new Date(parsedData.grnDate) : undefined;
+      documentDate = parseSafeDate(parsedData.grnDate);
       // Normalize GRN receivedQuantity -> quantity
       items = (parsedData.items || []).map((item: any) => ({
         itemCode: item.itemCode,
@@ -50,7 +59,7 @@ export const saveParsedDocument = async (input: SaveParsedDocumentInput): Promis
     case 'invoice':
       poNumber = parsedData.poNumber;
       documentNumber = parsedData.invoiceNumber;
-      documentDate = parsedData.invoiceDate ? new Date(parsedData.invoiceDate) : undefined;
+      documentDate = parseSafeDate(parsedData.invoiceDate);
       items = (parsedData.items || []).map((item: any) => ({
         itemCode: item.itemCode,
         description: item.description,

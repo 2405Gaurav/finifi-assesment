@@ -4,7 +4,7 @@ import { config } from '../config/config';
 const genAI = new GoogleGenerativeAI(config.gemini.apiKey);
 
 /**
- * Generic document parser using Gemini 1.5 Flash
+ * Generic document parser using Gemini 2.5 Flash
  * @param documentType 'po' | 'grn' | 'invoice'
  * @param rawText Extracted text from PDF
  * @returns Parsed structured JSON
@@ -14,7 +14,7 @@ export const parseDocument = async (
   rawText: string,
   retries = 3,
 ): Promise<any> => {
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
   const prompts = {
     po: `Extract the following details from this Purchase Order text into a strict JSON format:
