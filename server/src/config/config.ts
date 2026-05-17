@@ -10,4 +10,7 @@ export const config = {
     url: process.env.MONGODB_URL || 'mongodb://localhost:27017/finifi',
     options: {},
   },
+  gemini: {
+    apiKey: process.env.GEMINI_API_KEY || '',
+  },
 };
