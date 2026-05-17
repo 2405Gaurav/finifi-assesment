@@ -11,6 +11,7 @@ interface SaveParsedDocumentInput {
   rawExtractedText: string;
   parsedData: any;
   file: Express.Multer.File;
+  triggerRecalculation?: boolean;
 }
 
 interface NormalizedItem {
@@ -29,12 +30,12 @@ const parseSafeDate = (dateStr: any): Date | undefined => {
 };
 
 const parseQuantity = (value: unknown): number | null => {
-  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (typeof value === 'number') return Number.isFinite(value) && value >= 0 ? value : null;
   if (typeof value === 'string') {
     const normalized = value.replace(/,/g, '').trim();
     if (!normalized) return null;
     const parsed = Number(normalized);
-    return Number.isFinite(parsed) ? parsed : null;
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
   }
   return null;
 };
@@ -70,7 +71,7 @@ const normalizeItems = (
  * Service to handle document persistence and normalization
  */
 export const saveParsedDocument = async (input: SaveParsedDocumentInput): Promise<IDocument> => {
-  const { documentType, rawExtractedText, parsedData, file } = input;
+  const { documentType, rawExtractedText, parsedData, file, triggerRecalculation = true } = input;
 
   // 1. Normalize based on document type
   let poNumber = '';
@@ -109,6 +110,9 @@ export const saveParsedDocument = async (input: SaveParsedDocumentInput): Promis
   if (!documentNumber) {
     throw new ApiError(httpStatus.BAD_REQUEST, `Invalid ${documentType}: document number is missing in parsed data.`);
   }
+  if (!rawExtractedText.trim()) {
+    throw new ApiError(httpStatus.BAD_REQUEST, `Invalid ${documentType}: no extractable text was found in the uploaded PDF.`);
+  }
   if (!items || items.length === 0) {
     throw new ApiError(httpStatus.BAD_REQUEST, `Invalid ${documentType}: items array is missing, empty, or invalid.`);
   }
@@ -119,7 +123,7 @@ export const saveParsedDocument = async (input: SaveParsedDocumentInput): Promis
     poNumber,
     documentNumber,
     documentDate,
-    vendorName: parsedData.vendorName,
+    vendorName: typeof parsedData.vendorName === 'string' ? parsedData.vendorName.trim() : undefined,
     items,
     rawExtractedText,
     parsedJson: parsedData,
@@ -129,7 +133,9 @@ export const saveParsedDocument = async (input: SaveParsedDocumentInput): Promis
   });
 
   // 4. Trigger recalculation
-  await recalculateMatchState(poNumber);
+  if (triggerRecalculation) {
+    await recalculateMatchState(poNumber);
+  }
 
   return document;
 };

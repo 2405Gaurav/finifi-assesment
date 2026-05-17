@@ -13,7 +13,12 @@ export const getMatchByPoNumber = async (req: Request, res: Response, next: Next
       throw new ApiError(httpStatus.BAD_REQUEST, 'PO number is required');
     }
 
-    const matchResult = await MatchResultModel.findOne({ poNumber });
+    const documentSelection =
+      'documentType poNumber documentNumber documentDate vendorName items processingStatus createdAt updatedAt';
+    const matchResult = await MatchResultModel.findOne({ poNumber })
+      .populate({ path: 'linkedDocuments.po', select: documentSelection })
+      .populate({ path: 'linkedDocuments.grns', select: documentSelection })
+      .populate({ path: 'linkedDocuments.invoices', select: documentSelection });
 
     if (!matchResult) {
       throw new ApiError(httpStatus.NOT_FOUND, `No match result found for PO Number: ${poNumber}`);

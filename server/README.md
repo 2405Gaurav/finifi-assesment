@@ -42,12 +42,12 @@ The project follows a **Clean Architecture** pattern:
 ## 🚦 API Endpoints
 
 ### **Documents**
--   `POST /api/v1/documents/process`: Upload PO, GRN, and Invoice PDFs concurrently.
--   `POST /api/v1/documents/upload`: Upload a single PDF by type (`po`, `grn`, `invoice`).
+-   `POST /api/v1/documents/process`: Convenience endpoint to upload PO, GRN, and Invoice PDFs concurrently.
+-   `POST /api/v1/documents/upload`: Assignment-minimum endpoint to upload a single PDF by type (`po`, `grn`, `invoice`).
 -   `GET /api/v1/documents/:id`: Retrieve a specific parsed document.
 
 ### **Matching**
--   `GET /api/v1/match/:poNumber`: Get the latest matching state and mismatch reasons for a PO.
+-   `GET /api/v1/match/:poNumber`: Get the latest matching state, mismatch reasons, item-level results, and the currently linked documents for a PO.
 
 ### **Documentation**
 -   `GET /api-docs`: Interactive Swagger UI documentation.
@@ -76,10 +76,51 @@ The project follows a **Clean Architecture** pattern:
 ## 🧪 Testing
 
 -   Use the **Swagger UI** at `http://localhost:5000/api-docs` to test endpoints directly.
--   A sample Postman collection is also provided in the repository.
+-   Run `npm run build` to verify the TypeScript server compiles cleanly.
+-   Run `npm run lint` to verify the backend passes ESLint 9 with the repo-local flat config.
+
+## 📮 API Usage Examples
+
+Upload a single PO:
+
+```bash
+curl -X POST http://localhost:5000/api/v1/documents/upload \
+  -F "documentType=po" \
+  -F "file=@./samples/po.pdf"
+```
+
+Upload a single GRN:
+
+```bash
+curl -X POST http://localhost:5000/api/v1/documents/upload \
+  -F "documentType=grn" \
+  -F "file=@./samples/grn.pdf"
+```
+
+Upload a single Invoice:
+
+```bash
+curl -X POST http://localhost:5000/api/v1/documents/upload \
+  -F "documentType=invoice" \
+  -F "file=@./samples/invoice.pdf"
+```
+
+Fetch a parsed document:
+
+```bash
+curl http://localhost:5000/api/v1/documents/<documentId>
+```
+
+Fetch the latest three-way match result:
+
+```bash
+curl http://localhost:5000/api/v1/match/PO-12345
+```
 
 ## 📝 Assumptions & Tradeoffs
 
 -   **Assumption**: Each document contains a clearly identifiable PO Number used for linking.
 -   **Tradeoff**: We recompute the full match state on every upload. While slightly more expensive than incremental updates, it guarantees 100% accuracy for out-of-order arrivals in a low-to-medium volume environment.
 -   **AI Parsing**: We use Gemini 2.5 Flash for high-speed, cost-effective extraction. Rare extraction failures are handled via validation errors and descriptive logs.
+-   **Out-of-order uploads**: Documents are stored independently first, then matching is recalculated from the full document set for the affected `poNumber`.
+-   **Edge-case handling**: The API rejects empty/non-extractable PDFs, missing `poNumber`, missing document numbers, and invalid item arrays before persisting parsed output.

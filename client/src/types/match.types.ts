@@ -42,9 +42,9 @@ export interface ItemResult {
 export interface MatchResult {
   poNumber: string;
   linkedDocuments: {
-    po: string | null;
-    grns: string[];
-    invoices: string[];
+    po: DocumentData | null;
+    grns: DocumentData[];
+    invoices: DocumentData[];
   };
   status: MatchStatus;
   mismatchReasons: MismatchReason[];

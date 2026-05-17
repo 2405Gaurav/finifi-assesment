@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import type { AxiosError } from 'axios';
 import { matchService } from '../services/match.service';
 import type { DocumentData, MatchResult } from '../types/match.types';
 
@@ -17,6 +18,15 @@ interface MatchState {
   fetchMatchResult: (poNumber: string) => Promise<void>;
   clearState: () => void;
 }
+
+interface ApiErrorResponse {
+  message?: string;
+}
+
+const getErrorMessage = (error: unknown, fallback: string): string => {
+  const axiosError = error as AxiosError<ApiErrorResponse>;
+  return axiosError.response?.data?.message || fallback;
+};
 
 export const useMatchStore = create<MatchState>((set) => ({
   loading: false,
@@ -41,8 +51,8 @@ export const useMatchStore = create<MatchState>((set) => ({
         // Automatically fetch match result after processing
         await useMatchStore.getState().fetchMatchResult(response.data.po.poNumber);
       }
-    } catch (err: any) {
-      set({ error: err.response?.data?.message || 'Failed to process documents' });
+    } catch (error: unknown) {
+      set({ error: getErrorMessage(error, 'Failed to process documents') });
     } finally {
       set({ loading: false });
     }
@@ -55,8 +65,8 @@ export const useMatchStore = create<MatchState>((set) => ({
       if (response.success) {
         set({ matchResult: response.data });
       }
-    } catch (err: any) {
-      set({ error: err.response?.data?.message || 'Failed to fetch match result' });
+    } catch (error: unknown) {
+      set({ error: getErrorMessage(error, 'Failed to fetch match result') });
     } finally {
       set({ loading: false });
     }

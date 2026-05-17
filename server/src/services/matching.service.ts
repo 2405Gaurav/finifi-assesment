@@ -25,6 +25,8 @@ export const runMatchingEngine = (
 ): IMatchingResult => {
   const mismatchReasons: MismatchReason[] = [];
   const itemResultsMap: Map<string, IItemResult> = new Map();
+  const hasNoSupportingDocs = grns.length === 0 && invoices.length === 0;
+  const hasIncompleteSupportingDocs = grns.length === 0 || invoices.length === 0;
   const linkedDocuments: ILinkedDocuments = {
     po: po ? (po._id as any) : null,
     grns: grns.map((g) => g._id as any),
@@ -112,7 +114,9 @@ export const runMatchingEngine = (
       itemReasons.forEach((r) => {
         if (!mismatchReasons.includes(r)) mismatchReasons.push(r);
       });
-    } else if (!po || grns.length === 0 || invoices.length === 0) {
+    } else if (!po || hasNoSupportingDocs) {
+      item.status = MatchStatus.INSUFFICIENT_DOCUMENTS;
+    } else if (hasIncompleteSupportingDocs) {
       item.status = MatchStatus.PARTIALLY_MATCHED;
     } else {
       item.status = MatchStatus.MATCHED;
@@ -124,9 +128,9 @@ export const runMatchingEngine = (
 
   if (mismatchReasons.length > 0) {
     overallStatus = MatchStatus.MISMATCH;
-  } else if (!po) {
+  } else if (!po || hasNoSupportingDocs) {
     overallStatus = MatchStatus.INSUFFICIENT_DOCUMENTS;
-  } else if (grns.length === 0 || invoices.length === 0) {
+  } else if (hasIncompleteSupportingDocs) {
     overallStatus = MatchStatus.PARTIALLY_MATCHED;
   } else {
     // Check if all items are matched

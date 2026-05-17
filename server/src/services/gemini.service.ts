@@ -76,7 +76,7 @@ export const parseDocument = async (
 
     try {
       return JSON.parse(jsonString);
-    } catch (parseError) {
+    } catch {
       if (retries > 0) {
         console.warn(`Gemini JSON parse failed, retrying... (${retries} left)`);
         return parseDocument(documentType, rawText, retries - 1);
