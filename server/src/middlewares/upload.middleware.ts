@@ -2,6 +2,14 @@ import multer from 'multer';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { Request } from 'express';
+import fs from 'fs';
+import ApiError from '../utils/ApiError';
+import httpStatus from 'http-status';
+
+const uploadsDir = path.resolve(process.cwd(), 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
 
 /**
  * Multer storage configuration
@@ -9,7 +17,7 @@ import { Request } from 'express';
  */
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/');
+    cb(null, uploadsDir);
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = `${uuidv4()}${path.extname(file.originalname)}`;
@@ -24,7 +32,7 @@ const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilt
   if (file.mimetype === 'application/pdf') {
     cb(null, true);
   } else {
-    cb(new Error('Only PDF files are allowed!'));
+    cb(new ApiError(httpStatus.BAD_REQUEST, 'Only PDF files are allowed.'));
   }
 };
 

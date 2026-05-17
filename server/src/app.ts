@@ -6,6 +6,8 @@ import swaggerJsdoc from 'swagger-jsdoc';
 import routes from './routes/v1';
 import swaggerOptions from './config/swagger';
 import { errorConverter, errorHandler } from './middlewares/error.middleware';
+import httpStatus from 'http-status';
+import ApiError from './utils/ApiError';
 
 const app: Express = express();
 
@@ -30,6 +32,10 @@ app.use('/api/v1', routes);
 
 app.get('/', (req, res) => {
   res.send({ message: 'Server is running', swagger: '/api-docs' });
+});
+
+app.use((req, res, next) => {
+  next(new ApiError(httpStatus.NOT_FOUND, 'Route not found'));
 });
 
 // convert error to ApiError, if needed

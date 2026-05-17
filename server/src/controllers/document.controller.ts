@@ -3,9 +3,10 @@ import { extractTextFromPdf } from '../utils/pdfExtractor';
 import { parseDocument } from '../services/gemini.service';
 import { saveParsedDocument } from '../services/document.service';
 import httpStatus from 'http-status';
-import ApiError  from '@/utils/ApiError';
+import ApiError from '../utils/ApiError';
 import fs from 'fs';
 import DocumentModel from '../models/document.model';
+import mongoose from 'mongoose';
 
 /**
  * Controller to handle document processing with MongoDB persistence
@@ -84,6 +85,9 @@ export const processDocuments = async (req: Request, res: Response, next: NextFu
 export const getDocumentById = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
+    if (!mongoose.isValidObjectId(id)) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid document ID format');
+    }
     const document = await DocumentModel.findById(id);
 
     if (!document) {
@@ -104,14 +108,14 @@ export const getDocumentById = async (req: Request, res: Response, next: NextFun
  */
 export const uploadSingleDocument = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { documentType } = req.body;
+    const normalizedDocumentType = String(req.body.documentType || '').trim().toLowerCase();
     const file = req.file;
 
     if (!file) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'No file uploaded');
     }
 
-    if (!['po', 'grn', 'invoice'].includes(documentType)) {
+    if (!['po', 'grn', 'invoice'].includes(normalizedDocumentType)) {
       if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
       throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid documentType. Must be po, grn, or invoice');
     }
@@ -120,11 +124,11 @@ export const uploadSingleDocument = async (req: Request, res: Response, next: Ne
     const rawText = await extractTextFromPdf(file.path);
 
     // 2. Parse using Gemini service
-    const parsedData = await parseDocument(documentType as any, rawText);
+    const parsedData = await parseDocument(normalizedDocumentType as any, rawText);
 
     // 3. Normalize and Save to MongoDB
     const savedDocument = await saveParsedDocument({
-      documentType: documentType as any,
+      documentType: normalizedDocumentType as any,
       rawExtractedText: rawText,
       parsedData,
       file,

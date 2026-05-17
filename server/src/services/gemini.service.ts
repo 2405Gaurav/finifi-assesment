@@ -14,6 +14,10 @@ export const parseDocument = async (
   rawText: string,
   retries = 3,
 ): Promise<any> => {
+  if (!config.gemini.apiKey) {
+    throw new Error('Gemini API key is not configured.');
+  }
+
   const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
   const prompts = {

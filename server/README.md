@@ -37,7 +37,7 @@ The project follows a **Clean Architecture** pattern:
 1.  **Rule 1**: Total GRN quantity must not exceed PO quantity.
 2.  **Rule 2**: Total Invoice quantity must not exceed total GRN quantity.
 3.  **Rule 3**: Total Invoice quantity must not exceed PO quantity.
-4.  **Rule 4**: Invoice date must not be before the PO date.
+4.  **Rule 4**: Invoice date must not be after the PO date.
 
 ## 🚦 API Endpoints
 

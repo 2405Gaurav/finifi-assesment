@@ -21,6 +21,7 @@ export const runMatchingEngine = (
   po: IDocument | null,
   grns: IDocument[],
   invoices: IDocument[],
+  options?: { hasDuplicatePo?: boolean },
 ): IMatchingResult => {
   const mismatchReasons: MismatchReason[] = [];
   const itemResultsMap: Map<string, IItemResult> = new Map();
@@ -29,6 +30,10 @@ export const runMatchingEngine = (
     grns: grns.map((g) => g._id as any),
     invoices: invoices.map((i) => i._id as any),
   };
+
+  if (options?.hasDuplicatePo) {
+    mismatchReasons.push(MismatchReason.DUPLICATE_PO);
+  }
 
   // Rule 4: Invoice date must not be after PO date
   if (po && invoices.length > 0) {

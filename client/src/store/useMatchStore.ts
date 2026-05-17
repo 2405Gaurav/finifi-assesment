@@ -42,7 +42,7 @@ export const useMatchStore = create<MatchState>((set) => ({
         await useMatchStore.getState().fetchMatchResult(response.data.po.poNumber);
       }
     } catch (err: any) {
-      set({ error: err.response?.data?.error || 'Failed to process documents' });
+      set({ error: err.response?.data?.message || 'Failed to process documents' });
     } finally {
       set({ loading: false });
     }
@@ -56,7 +56,7 @@ export const useMatchStore = create<MatchState>((set) => ({
         set({ matchResult: response.data });
       }
     } catch (err: any) {
-      set({ error: err.response?.data?.error || 'Failed to fetch match result' });
+      set({ error: err.response?.data?.message || 'Failed to fetch match result' });
     } finally {
       set({ loading: false });
     }

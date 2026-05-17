@@ -1,5 +1,7 @@
 import DocumentModel, { DocumentType, ProcessingStatus, IDocument } from '../models/document.model';
 import { recalculateMatchState } from './recalculation.service';
+import ApiError from '../utils/ApiError';
+import httpStatus from 'http-status';
 
 /**
  * Interface for the input to saveParsedDocument
@@ -11,6 +13,12 @@ interface SaveParsedDocumentInput {
   file: Express.Multer.File;
 }
 
+interface NormalizedItem {
+  itemCode: string;
+  description: string;
+  quantity: number;
+}
+
 /**
  * Safely parse a date string, returning undefined if invalid
  */
@@ -18,6 +26,44 @@ const parseSafeDate = (dateStr: any): Date | undefined => {
   if (!dateStr) return undefined;
   const date = new Date(dateStr);
   return isNaN(date.getTime()) ? undefined : date;
+};
+
+const parseQuantity = (value: unknown): number | null => {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (typeof value === 'string') {
+    const normalized = value.replace(/,/g, '').trim();
+    if (!normalized) return null;
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+};
+
+const normalizeItems = (
+  items: unknown,
+  quantityKey: 'quantity' | 'receivedQuantity',
+): NormalizedItem[] => {
+  if (!Array.isArray(items)) {
+    return [];
+  }
+
+  return items
+    .map((item: any) => {
+      const itemCode = String(item?.itemCode ?? item?.sku ?? '').trim();
+      const description = String(item?.description ?? itemCode).trim();
+      const quantity = parseQuantity(item?.[quantityKey] ?? item?.quantity ?? item?.receivedQuantity);
+
+      if (!itemCode || !description || quantity === null) {
+        return null;
+      }
+
+      return {
+        itemCode,
+        description,
+        quantity,
+      };
+    })
+    .filter((item): item is NormalizedItem => item !== null);
 };
 
 /**
@@ -34,47 +80,37 @@ export const saveParsedDocument = async (input: SaveParsedDocumentInput): Promis
 
   switch (documentType) {
     case 'po':
-      poNumber = parsedData.poNumber;
-      documentNumber = parsedData.poNumber;
+      poNumber = String(parsedData.poNumber || '').trim();
+      documentNumber = String(parsedData.poNumber || '').trim();
       documentDate = parseSafeDate(parsedData.poDate);
-      items = (parsedData.items || []).map((item: any) => ({
-        itemCode: item.itemCode,
-        description: item.description,
-        quantity: item.quantity,
-      }));
+      items = normalizeItems(parsedData.items, 'quantity');
       break;
 
     case 'grn':
-      poNumber = parsedData.poNumber;
-      documentNumber = parsedData.grnNumber;
+      poNumber = String(parsedData.poNumber || '').trim();
+      documentNumber = String(parsedData.grnNumber || '').trim();
       documentDate = parseSafeDate(parsedData.grnDate);
-      // Normalize GRN receivedQuantity -> quantity
-      items = (parsedData.items || []).map((item: any) => ({
-        itemCode: item.itemCode,
-        description: item.description,
-        quantity: item.receivedQuantity || item.quantity,
-      }));
+      items = normalizeItems(parsedData.items, 'receivedQuantity');
       break;
 
     case 'invoice':
-      poNumber = parsedData.poNumber;
-      documentNumber = parsedData.invoiceNumber;
+      poNumber = String(parsedData.poNumber || '').trim();
+      documentNumber = String(parsedData.invoiceNumber || '').trim();
       documentDate = parseSafeDate(parsedData.invoiceDate);
-      items = (parsedData.items || []).map((item: any) => ({
-        itemCode: item.itemCode,
-        description: item.description,
-        quantity: item.quantity,
-      }));
+      items = normalizeItems(parsedData.items, 'quantity');
       break;
   }
 
   // 2. Validation
   if (!poNumber) {
     console.error(`[Parsing Error] ${documentType} is missing poNumber. Parsed Data:`, JSON.stringify(parsedData, null, 2));
-    throw new Error(`Invalid ${documentType}: poNumber is missing in parsed data.`);
+    throw new ApiError(httpStatus.BAD_REQUEST, `Invalid ${documentType}: poNumber is missing in parsed data.`);
+  }
+  if (!documentNumber) {
+    throw new ApiError(httpStatus.BAD_REQUEST, `Invalid ${documentType}: document number is missing in parsed data.`);
   }
   if (!items || items.length === 0) {
-    throw new Error(`Invalid ${documentType}: items array is missing or empty.`);
+    throw new ApiError(httpStatus.BAD_REQUEST, `Invalid ${documentType}: items array is missing, empty, or invalid.`);
   }
 
   // 3. Create MongoDB document

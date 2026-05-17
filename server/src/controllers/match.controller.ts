@@ -8,7 +8,10 @@ import ApiError from '../utils/ApiError';
  */
 export const getMatchByPoNumber = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { poNumber } = req.params;
+    const poNumber = String(req.params.poNumber || '').trim();
+    if (!poNumber) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'PO number is required');
+    }
 
     const matchResult = await MatchResultModel.findOne({ poNumber });
 

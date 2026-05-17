@@ -4,7 +4,7 @@ import { z } from 'zod';
  * Common reusable validation schemas
  */
 export const commonSchemas = {
-  poNumber: z.string().min(1, 'PO Number is required'),
+  poNumber: z.string().trim().min(1, 'PO Number is required'),
   pagination: z.object({
     page: z.string().optional().transform((val) => (val ? parseInt(val, 10) : 1)),
     limit: z.string().optional().transform((val) => (val ? parseInt(val, 10) : 10)),
