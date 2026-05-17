@@ -6,10 +6,6 @@ import swaggerJsdoc from 'swagger-jsdoc';
 import routes from './routes/v1';
 import swaggerOptions from './config/swagger';
 import { errorConverter, errorHandler } from './middlewares/error.middleware';
-import { generalApiRateLimiter } from './middlewares/rateLimit.middleware';
-import { getUploadSession, getUploadSessions } from './controllers/uploadSession.controller';
-import { validate } from './middlewares/validate.middleware';
-import { uploadSessionValidators } from './validators/document.validator';
 import httpStatus from 'http-status';
 import ApiError from './utils/ApiError';
 
